@@ -208,7 +208,7 @@ def get_total_hamiltonian(N, n_max_list, omega_atom_list, omega_field_list, g_li
     return H
 
 
-def test_hamiltonian():
+def test_hamiltonian(N, n_max_list, omega_atom_list, omega_field_list, g_list_coupled):
     """
         Unit test to validate the Hamiltonian construction.
 
@@ -221,11 +221,11 @@ def test_hamiltonian():
         Raises:
             AssertionError: If the calculated properties do not match within numerical tolerance.
     """
-    N = 3
-    n_max_list = [1, 2, 3]
-    omega_atom_list = [1.0, 1.2, 1.5]
-    omega_field_list = [0.8, 1.0, 1.4]
-    g_list_coupled = [0.10, 0.05, 0.15]  # RWA: weak coupling - g << omega_atom, omega_field
+    # N = 3
+    # n_max_list = [1, 2, 3]
+    # omega_atom_list = [1.0, 1.2, 1.5]
+    # omega_field_list = [0.8, 1.0, 1.4]
+    # g_list_coupled = [0.10, 0.05, 0.15]  # RWA: weak coupling - g << omega_atom, omega_field
     H = get_total_hamiltonian(N, n_max_list, omega_atom_list, omega_field_list, g_list_coupled)
 
     assert np.allclose(H, H.T.conjugate()) == True #verif if hermitian
@@ -249,25 +249,16 @@ def test_hamiltonian():
 
     assert np.allclose(sum_of_energies, total_energy) == True #verif if sum of partial energies is equal to total energy, for independent uncoupled systems
 
-test_hamiltonian()
-
-import matplotlib.pyplot as plt
-
-def plot_hamiltonian(H):
-    # Hartă termică pentru a vedea magnitudinea
-    plt.figure(figsize=(10, 8))
-    plt.imshow(np.abs(H), cmap='viridis')
-    plt.colorbar(label='Amplitudine |H_ij|')
-    plt.title("Heatmap-ul Hamiltonianului")
-    plt.show()
-
-def main():
+def system_data():
     N = 3
     n_max_list = [1, 2, 3]
     omega_atom_list = [1.0, 1.2, 1.5]
     omega_field_list = [0.8, 1.0, 1.4]
-    g_list_coupled = [0.10, 0.05, 0.15]  # RWA: weak coupling - g << omega_atom, omega_field
-    H = get_total_hamiltonian(N, n_max_list, omega_atom_list, omega_field_list, g_list_coupled)
-    plot_hamiltonian(H)
 
-main()
+    g_list_uncoupled = [0.0, 0.0, 0.0]
+    test_hamiltonian(N, n_max_list, omega_atom_list, omega_field_list, g_list_uncoupled)
+
+    g_list_coupled = [0.10, 0.05, 0.15]  # RWA: weak coupling - g << omega_atom, omega_field
+    test_hamiltonian(N, n_max_list, omega_atom_list, omega_field_list, g_list_coupled)
+
+system_data()
