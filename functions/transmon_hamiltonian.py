@@ -1,9 +1,9 @@
 import numpy as np
 
 
-def uncoupled_transmon_hamiltonian(EJ, EC, ng, basis_size=15):
+def uncoupled_transmon_hamiltonian(EJ, EC, ng, basis_size=15): # maximum of 2*15+1 cooper pairs
     """
-    Diagonalizes Transmon Hamiltonian in charge basis (n).
+    Constructs Transmon Hamiltonian in charge basis (n).
 
     EJ: Josephson energy
     EC: charging energy
@@ -27,19 +27,3 @@ def uncoupled_transmon_hamiltonian(EJ, EC, ng, basis_size=15):
         H[i + 1, i] = elem
 
     return H
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
