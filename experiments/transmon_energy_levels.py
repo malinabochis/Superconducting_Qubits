@@ -40,33 +40,6 @@ def get_transmon_energies_mathieu(n, ng, EJ_EC_ratio):
     # mathieu_a(level to be calculated, potential form)
     #a_v(q) = functia a de ordin v evaluata in q
 
-
-def get_transmon_energies(n_states_to_return, ng, EJ_EC_ratio):
-    """
-    Diagonalizarea directa a Hamiltonianului (Eq. 2.1)
-    """
-    EC = 1.0
-    EJ = EJ_EC_ratio * EC
-
-    # Definim baza de stari de sarcina (de la -15 la 15 e suficient)
-    n_basis = np.arange(-15, 16)
-    size = len(n_basis)
-    H = np.zeros((size, size))
-
-    # Umplem diagonala cu energia cinetica: 4*Ec*(n - ng)^2
-    for i in range(size):
-        H[i, i] = 4 * EC * (n_basis[i] - ng) ** 2
-
-    # Umplem off-diagonala cu energia Josephson: -Ej/2 (hopping)
-    for i in range(size - 1):
-        H[i, i + 1] = -EJ / 2.0
-        H[i + 1, i] = -EJ / 2.0
-
-    # Calculam valorile proprii (energiile)
-    energies = np.linalg.eigvalsh(H)
-    return energies[:n_states_to_return]  # Returnam primele n states (0, 1, 2)
-
-
 ng_axis = np.linspace(-2, 2, 500) # 500 experimental points
 ratios = [1.0, 5.0, 10.0, 50.0]
 levels = [0, 1, 2]
