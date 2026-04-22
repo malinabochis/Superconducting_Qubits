@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.sparse.linalg import eigsh
 
 # def k_sorting(n, ng):
 #     """
@@ -52,10 +53,14 @@ def get_transmon_energies(n_states_to_return, ng, EJ_EC_ratio):
     n_basis = np.arange(-15, 16)
     basis_size = len(n_basis)
 
-    H = uncoupled_transmon_hamiltonian(EJ, EC, ng, basis_size)
+    H = uncoupled_transmon_hamiltonian_dia(EJ, EC, ng, basis_size)
 
-    energies = np.linalg.eigvalsh(H)
-    return energies[:n_states_to_return]
+    # H = uncoupled_transmon_hamiltonian(EJ, EC, ng, basis_size)
+    # energies = np.linalg.eigvalsh(H)
+    # return energies[:n_states_to_return]
+
+    energies = eigsh(H, k=n_states_to_return, which='SA', return_eigenvectors=False)
+    return np.sort(energies)
 
 
 def main():
