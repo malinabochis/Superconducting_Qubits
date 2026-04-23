@@ -99,4 +99,58 @@ def get_two_transmon_hamiltonian_csc(params, g_coupling, basis_size=15):
         for j in range(d):
             H_dok[i * d + j, i * d + j] += g_coupling * n_vals[i] * n_vals[j]
 
-    return H_dok.tocsc()  # CSC format for improved computation (using diagonalization algorithms that work with columns)
+    return H_dok.tocsc()  # CSC format for improved computation (sparse matrix addition, sparse matrix tensor product, using diagonalization algorithms that work with columns, etc.)
+
+
+def get_transmon_chain_hamiltonian(qubit_params_list, couplings_list, basis_size=15):
+    """
+    qubit_params_list: [dict1, dict2, ..., dictN] (size N)
+    couplings_list: [g12, g23, ..., g_{N-1,N}] (size N-1)
+    """
+    N = len(qubit_params_list)
+    d = 2 * basis_size + 1
+    I_single_transmon = sparse.eye(d, format='csc') # local identity matrix
+
+    # Sum( I ⊗ ... ⊗ Hi ⊗ ... ⊗ I )
+    H_total = None
+
+    for i in range(N):
+        p = qubit_params_list[i]
+        Hi = get_uncoupled_transmon_hamiltonian_dia( p['EJ'], p['EC'], p['ng'], basis_size ).tocsc()
+
+        H_ext = Hi # Hi in the global space
+
+        for _ in range(i):
+            H_ext = sparse.kron(I_single_transmon, H_ext, format='csc')
+
+        for _ in range(N - 1 - i):
+            H_ext = sparse.kron(H_ext, I_single_transmon, format='csc')
+
+        if H_total is None: # only enters this branch after the first loop
+            H_total = H_ext
+        else:
+            H_total += H_ext
+
+
+    def __expand_to_global(op_local, pos, N, d):
+        """Funcție utilitară pentru a pune un operator local în spațiul global"""
+        I_single_transmon = sparse.eye(d, format='csc')
+        op_global = op_local
+        for _ in range(pos):
+            op_global = sparse.kron(I_single_transmon, op_global, format='csc')
+        for _ in range(N - 1 - pos):
+            op_global = sparse.kron(op_global, I_single_transmon, format='csc')
+        return op_global
+
+    n_local = sparse.diags(np.arange(-basis_size, basis_size + 1), format='csc')
+
+    # Interaction: Sum( g_i * n_i ⊗ n_{i+1} )
+    for i in range(N - 1):
+        g_i = couplings_list[i]
+
+        ni_glob = __expand_to_global(n_local, i, N, d)
+        n_next_glob = __expand_to_global(n_local, i + 1, N, d)
+
+        H_total += g_i * (ni_glob @ n_next_glob)
+
+    return H_total
