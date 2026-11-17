@@ -1,7 +1,11 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from anyio import sleep_until
+from fontTools.t1Lib import std_subrs
+from scipy.integrate import simpson
 from scipy.sparse import dia_matrix
 from dataclasses import dataclass
+from scipy.special import erf
 
 class Constant:
     @staticmethod
@@ -95,9 +99,15 @@ class Transmon:
     def ng(self, value):
         self.exp_data.ng = value
 # ----------------------------------------------------
-    def TransmonPotential(self):
-        EJ = self.EJ
-
+#     def TransmonPotential_FluxBasis(self):
+#         EJ = self.EJ
+#         N = 6000 # grid points !!HARDCODED
+#         cosphi_op = np.zeros((N,N))
+#
+#
+#
+#     def TransmonPotential_FockBasis(self):
+#         EJ = self.EJ
 
 
     def UncoupledTransmonHamiltonianDia(self, EJ, EC, ng, basis_size=15): # basis size is |n> a.k.a. number of Cooper pairs relative to the ground state of the superconducting island
@@ -123,3 +133,66 @@ class Transmon:
         H_dia = dia_matrix((data, offsets), shape=(D, D))
 
         return H_dia
+
+
+class Pulse:
+    def __init__(self, tg=None, std_dev=None, amplitude=None):
+        self.tg = tg
+        self.std_dev = std_dev
+        self.amplitude = amplitude
+
+    @property
+    def tg(self): return self._tg #._ for actual internal parameter, not setter function; otherwise enters infinite recursion
+
+    @tg.setter
+    def tg(self, value): self._tg = value
+
+    @property
+    def std_dev(self): return self._std_dev
+
+    @std_dev.setter
+    def std_dev(self, value): self._std_dev = value
+
+    @property
+    def amplitude(self): return self._amplitude
+
+    @amplitude.setter
+    def amplitude(self, value): self._amplitude = value
+
+    def Gaussian(self, t): # Gambetta 2011 eq 3.2 ref [35, 38]
+        numerator = np.exp( - (t - self.tg * 0.5) ** 2 / (2 * (self.std_dev **2)) ) - np.exp( - self.tg ** 2 / (8 * (self.std_dev ** 2)) )
+        denominator = np.sqrt(2 * np.pi * (self.std_dev ** 2)) * erf(self.tg / (np.sqrt(8) * self.std_dev)) - self.tg * np.exp( - self.tg ** 2 / (8 * (self.std_dev ** 2)) ) # erf from scipy.special
+        omega_g = self.amplitude * (numerator / denominator)
+        return omega_g
+
+
+std_dev = 1/3
+tg = 4 * std_dev
+amplitude = np.pi
+t = np.linspace(0, tg, 1000)
+
+pulse = Pulse(tg, std_dev, amplitude)
+omega_t = pulse.Gaussian(t)
+
+plt.figure(figsize=(9,9))
+plt.plot(t, omega_t)
+plt.show()
+
+def test_function():
+
+    std_dev = 1 / 3
+    tg = 4 * std_dev
+    amplitude = np.pi
+    t = np.linspace(0, tg, 1000)
+    pulse = Pulse(tg, std_dev, amplitude)
+    omega_t = pulse.Gaussian(t)
+
+    assert pulse.Gaussian(0) == 0
+    assert pulse.Gaussian(tg) == 0
+
+    area = simpson(omega_t, t)
+    theta = 2 * np.pi * area
+    assert  np.isclose(area, amplitude) # pulse area theorem
+
+    # a lot of other asserts needed, after more code is developed
+test_function()
